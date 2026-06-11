@@ -27,6 +27,18 @@ const styles = `
   color: #666;
 }
 
+.svgPreviewError {
+  margin: 0;
+  font-size: 12px;
+  color: #d02b20;
+}
+
+.svgPreviewSuccess {
+  margin: 0;
+  font-size: 12px;
+  color: #2b8a3e;
+}
+
 .svgPreviewCanvas {
   flex: 1;
   min-height: 150px;
@@ -46,6 +58,15 @@ const styles = `
 }
 `;
 
+const isValidSVGSyntax = (svgString) => {
+  if (!svgString.trim().startsWith('<svg')) return false;
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, 'image/svg+xml');
+
+  return !doc.querySelector('parsererror');
+};
+
 const SvgPreviewInput = ({ attribute, name, value, onChange, disabled, intlLabel }) => {
   const inputId = useId().replace(/:/g, '');
   const previewLabel = intlLabel?.defaultMessage || 'Inline SVG Code';
@@ -54,18 +75,27 @@ const SvgPreviewInput = ({ attribute, name, value, onChange, disabled, intlLabel
 
   const [rawSvg, setRawSvg] = useState(value || '');
   const [previewDoc, setPreviewDoc] = useState('');
+  const [isValidSvg, setIsValidSvg] = useState(!value || isValidSVGSyntax(value));
 
   useEffect(() => {
-    if (rawSvg) {
+    if (rawSvg && isValidSvg) {
       setPreviewDoc(`<!doctype html><html><body>${rawSvg}</body></html>`);
     } else {
       setPreviewDoc('');
     }
-  }, [rawSvg]);
+  }, [rawSvg, isValidSvg]);
 
   const handleChange = (event) => {
     const inputValue = event.target.value;
     setRawSvg(inputValue);
+
+    const isEmpty = inputValue.trim().length === 0;
+    const nextIsValid = isEmpty || isValidSVGSyntax(inputValue);
+    setIsValidSvg(nextIsValid);
+
+    if (!nextIsValid) {
+      return;
+    }
 
     onChange({
       target: {
@@ -74,6 +104,7 @@ const SvgPreviewInput = ({ attribute, name, value, onChange, disabled, intlLabel
         type: attribute.type,
       },
     });
+
   };
 
   return React.createElement(
@@ -89,6 +120,19 @@ const SvgPreviewInput = ({ attribute, name, value, onChange, disabled, intlLabel
         { id: helpTextId, className: 'svgPreviewHelp' },
         'Enter raw SVG markup. The preview updates live.'
       ),
+      rawSvg.trim().length > 0 &&
+        isValidSvg &&
+        React.createElement(
+          'p',
+          { className: 'svgPreviewSuccess', role: 'status' },
+          'SVG syntax is valid.'
+        ),
+      !isValidSvg &&
+        React.createElement(
+          'p',
+          { className: 'svgPreviewError', role: 'alert' },
+          'Invalid SVG syntax. Start with <svg ...> and ensure valid XML markup.'
+        ),
       React.createElement(
         Flex,
         { gap: 4, alignItems: 'start', className: 'svgPreviewLayout' },
