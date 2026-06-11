@@ -51,6 +51,14 @@ const styles = `
   padding: 10px;
 }
 
+.svgPreviewCanvasSuccess {
+  border-color: #2b8a3e;
+}
+
+.svgPreviewCanvasError {
+  border-color: #d02b20;
+}
+
 .svgPreviewFrame {
   width: 100%;
   height: 130px;
@@ -76,6 +84,11 @@ const SvgPreviewInput = ({ attribute, name, value, onChange, disabled, intlLabel
   const [rawSvg, setRawSvg] = useState(value || '');
   const [previewDoc, setPreviewDoc] = useState('');
   const [isValidSvg, setIsValidSvg] = useState(!value || isValidSVGSyntax(value));
+  const canvasStateClass = rawSvg.trim().length === 0
+    ? ''
+    : isValidSvg
+      ? ' svgPreviewCanvasSuccess'
+      : ' svgPreviewCanvasError';
 
   useEffect(() => {
     if (rawSvg && isValidSvg) {
@@ -152,7 +165,7 @@ const SvgPreviewInput = ({ attribute, name, value, onChange, disabled, intlLabel
         React.createElement(
           Box,
           {
-            className: 'svgPreviewCanvas',
+            className: `svgPreviewCanvas${canvasStateClass}`,
             role: 'region',
             'aria-label': `${previewLabel} preview`,
           },
